@@ -8,6 +8,8 @@
     <ItemGroup>
       <PackageReference Include="EPPlus" Version="6.0.6" />
       <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+      <PackageReference Include="RestSharp" Version="108.0.1" />
+      <PackageReference Include="SqlSugarCore" Version="5.1.2-preview05" />
     </ItemGroup>
 
 </Project>

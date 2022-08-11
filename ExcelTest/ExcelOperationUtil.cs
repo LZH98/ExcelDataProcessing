@@ -16,6 +16,7 @@ namespace ExcelTest
             Hashtable tableNameHashtable = new Hashtable();
             Hashtable dataFieldHashtable = new Hashtable();
             Hashtable displayNameHashtable = new Hashtable();
+            Hashtable nodeInfoHashtable = new Hashtable();
             FileInfo fileInfo = new FileInfo(filePath);
             int tableConfigEndIndex = 0;
 
@@ -35,6 +36,9 @@ namespace ExcelTest
                 string dataFieldValue = string.Empty;
                 List<JObject> result = new List<JObject>();
                 List<JObject> displayList = new List<JObject>();
+                (int, int) processConfigRange = (int.MaxValue,0);
+                (int, int) nodeConfigRange = (int.MaxValue,0);
+
                 for (int i = 1; i < ws.Columns.EndColumn; i++)
                 {
                     range = ws.Cells[1, i];
@@ -58,7 +62,7 @@ namespace ExcelTest
                     }
 
                     #endregion
-                    
+
                     #region 表名配置解析
 
                     else if (range.Text.Trim().ToLower() == "tablename")
@@ -75,12 +79,50 @@ namespace ExcelTest
                                     tableNameHashtable.Add(j.ToString(), tableNameValue);
                             }
                         }
+
+                        // 查询流程配置
+                        var processConfigFirst = 
+                            ws.Cells.FirstOrDefault(f => 
+                                f.Start.Column == i && f.Text.Trim().ToLower() == "process");
+                        var processConfigLast = 
+                            ws.Cells.FirstOrDefault(f => 
+                                f.Start.Column == i && f.Text.Trim().ToLower() == "process" && f.Start.Row != processConfigFirst.Start.Row);
+
+                        if (processConfigFirst != null && processConfigLast != null)
+                        {
+                            processConfigRange.Item1 = processConfigFirst.Start.Row;
+                            processConfigRange.Item2 = processConfigLast.Start.Row;
+                        }
+                        // 查询流程配置
+
+                        // 查询节点配置
+                        var nodeConfigFirst = 
+                            ws.Cells.FirstOrDefault(f=>
+                                f.Start.Column == i && f.Text.Trim().ToLower() == "node");
+                        var nodeConfigLast = 
+                            ws.Cells.FirstOrDefault(f=>
+                                f.Start.Column == i && f.Text.Trim().ToLower() == "node" && f.Start.Row != nodeConfigFirst.Start.Row);
+                        if (nodeConfigFirst != null && nodeConfigLast != null)
+                        {
+                            nodeConfigRange.Item1 = nodeConfigFirst.Start.Row;
+                            nodeConfigRange.Item2 = nodeConfigLast.Start.Row;
+
+                            for (int index = nodeConfigRange.Item1; index < nodeConfigRange.Item2; index++)
+                            {
+                                var value = ws.Cells[index, i];
+                                if (!string.IsNullOrEmpty(value?.Text))
+                                {
+                                    nodeInfoHashtable.Add(index.ToString(), value?.Text);
+                                }
+                            }
+                        }
+                        // 查询节点配置
                     }
 
                     #endregion
-                    
 
                     #region 字段名称配置解析
+
                     else if (range.Text.Trim().ToLower() == "data")
                     {
                         for (int j = 2; j < tableConfigEndIndex; j++)
@@ -93,19 +135,20 @@ namespace ExcelTest
                             }
                         }
                     }
+
                     #endregion
 
                     #region 输入内容解析
-                    
+
                     else if (range.Text.Trim().ToLower() == "values")
                     {
                         JObject formData = new JObject();
                         JObject displayData = new JObject();
-                        for (int j = 2; j < tableConfigEndIndex; j++)
+                        for (int j = 2; j < ws.Rows.EndRow; j++)
                         {
                             valueRange = ws.Cells[j, i];
                             dataFieldValue = valueRange?.Text;
-                            if (!string.IsNullOrEmpty(dataFieldValue))
+                            if (!string.IsNullOrEmpty(dataFieldValue) && j < tableConfigEndIndex)
                             {
                                 string tableName = Convert.ToString(tableNameHashtable[j.ToString()]);
                                 string dataFieldName = Convert.ToString(dataFieldHashtable[j.ToString()]);
@@ -119,7 +162,7 @@ namespace ExcelTest
                                         mainTable = formData[tableName] = new JObject();
                                         displayMainTable = displayData[tableName] = new JObject();
                                     }
-                                        
+
                                     mainTable[dataFieldName] = dataFieldValue;
                                     displayMainTable[dispalyName] = dataFieldValue;
                                 }
@@ -137,6 +180,25 @@ namespace ExcelTest
                                     displayTable[0][dispalyName] = dataFieldValue;
                                 }
                             }
+                            else if(j > processConfigRange.Item1 && j < processConfigRange.Item2)
+                            {
+                                
+                            }
+                            else if(j > nodeConfigRange.Item1 && j < nodeConfigRange.Item2)
+                            {
+                                switch ((j- nodeConfigRange.Item1) % 3)
+                                {
+                                    case 1:
+                                        Console.WriteLine($"节点：{nodeInfoHashtable[j.ToString()]} 审批人：{valueRange.Text}");
+                                        break;
+                                    case 2:
+                                        Console.WriteLine($"节点：{nodeInfoHashtable[j.ToString()]} 审批意见：{valueRange.Text}");
+                                        break;
+                                    case 0:
+                                        Console.WriteLine($"节点：{nodeInfoHashtable[j.ToString()]} 审批时间:{DateTime.Parse(valueRange.Text).ToString("yyyy-MM-dd HH:mm:ss")}");
+                                        break;
+                                }
+                            }
                         }
 
                         if (formData != null)
@@ -144,13 +206,14 @@ namespace ExcelTest
                             Console.WriteLine($"成功处理一条流程数据，数据详情：{JsonConvert.SerializeObject(formData)}");
                             result.Add(formData);
                         }
-                            
-                        if(displayData != null)
+
+                        if (displayData != null)
                             displayList.Add(displayData);
                     }
-                    
+
                     #endregion
                 }
+
 
                 Console.WriteLine(tableNameHashtable.Count);
                 Console.WriteLine(tableNameHashtable["2"]);
