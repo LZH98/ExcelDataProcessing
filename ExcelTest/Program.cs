@@ -2,9 +2,9 @@
 
 namespace ExcelTest
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine("程序开始执行");
             Console.WriteLine("===================请选择执行模式====================");
@@ -15,33 +15,37 @@ namespace ExcelTest
             switch (key)
             {
                 case 0:
-                    ExcelDataClear();
+                    ExcelDataReader();
                     break;
+
                 case 1:
                     break;
+
                 case 2:
                     break;
+
                 default:
                     Console.WriteLine("未找到匹配执行方式，程序即将退出。");
                     break;
             }
-            
+
             Console.WriteLine("===========程序执行完毕=============");
         }
 
-        private static void ExcelDataClear()
+        private static void ExcelDataReader()
         {
-            string filePath = @"./Input/流程示例.xlsx";
-            Console.WriteLine("开始执行第一个Sheet数据处理");
-            ExcelOperationUtil.ReadExcelFile(filePath,0,true);
-            Console.WriteLine("第一个Sheet执行完毕");
-            Console.WriteLine("开始执行第二个Sheet数据处理");
-            ExcelOperationUtil.ReadExcelFile(filePath,1,true);
-            Console.WriteLine("第二个Sheet执行完毕");
-            Console.WriteLine("开始执行第三个Sheet数据处理");
-            ExcelOperationUtil.ReadExcelFile(filePath,2,true);
-            Console.WriteLine("第三个Sheet执行完毕");
-            
+            string filePath = @"./Input/InputData.xlsx";
+            ExcelOperationUtil.ReadExcelFile(filePath, 0, true, true);
+            //Console.WriteLine("开始执行第一个Sheet数据处理");
+            //ExcelOperationUtil.ReadExcelFile(filePath,0,true);
+            //Console.WriteLine("第一个Sheet执行完毕");
+            //Console.WriteLine("开始执行第二个Sheet数据处理");
+            //ExcelOperationUtil.ReadExcelFile(filePath,1,true);
+            //Console.WriteLine("第二个Sheet执行完毕");
+            //Console.WriteLine("开始执行第三个Sheet数据处理");
+            //ExcelOperationUtil.ReadExcelFile(filePath,2,true);
+            //Console.WriteLine("第三个Sheet执行完毕");
+
             Console.WriteLine("==========所有Excel数据清理初始化完毕===========");
         }
     }
