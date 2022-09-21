@@ -1,10 +1,12 @@
-﻿using System;
+﻿using ExcelTest.Serivce;
+using System;
+using System.Threading.Tasks;
 
 namespace ExcelTest
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             Console.WriteLine("程序开始执行");
             Console.WriteLine("===================请选择执行模式====================");
@@ -17,8 +19,8 @@ namespace ExcelTest
                 case 0:
                     ExcelDataReader();
                     break;
-
                 case 1:
+                    await ProcessPostService.BatchPost();
                     break;
 
                 case 2:
