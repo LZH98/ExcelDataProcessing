@@ -12,19 +12,22 @@ namespace ExcelTest.Serivce
     /// </summary>
     public class UpdateProcStepService
     {
-        public static async Task UpdatSetpInfo()
+        public static void UpdatSetpInfo()
         {
             SqlSugarClient dbContent = SqlSugarConfig.GetConnectOption();
 
-            List<ProcessNodeConfig> processNodeConfigs = await dbContent.Queryable<ProcessNodeConfig>()
-                .Where(f => f.TaskID > 0).ToListAsync();
+            List<ProcessNodeConfig> processNodeConfigs = dbContent.Queryable<ProcessNodeConfig>()
+                .Where(f => f.TaskID > 0).ToList();
+
+            Console.WriteLine($"本次一共需要执行{processNodeConfigs.Count}条数据");
+            Console.ReadKey();
 
             int result = 0;
 
             // 遍历历史数据
-            processNodeConfigs.ForEach(async f =>
+            processNodeConfigs.ForEach( f =>
             {
-                result = await UpdateProcessStep(f, dbContent);
+                result = UpdateProcessStep(f, dbContent);
                 Console.WriteLine($"本次执行结果{result}");
             });
             
@@ -37,14 +40,14 @@ namespace ExcelTest.Serivce
         /// <param name="nodeConfig"></param>
         /// <param name="dbContent"></param>
         /// <returns></returns>
-        private static async Task<int> UpdateProcessStep(ProcessNodeConfig nodeConfig, SqlSugarClient dbContent)
+        private static int UpdateProcessStep(ProcessNodeConfig nodeConfig, SqlSugarClient dbContent)
         {
             int index = 0;
             try
             {
                 dbContent.Ado.BeginTran();
 
-                index = await dbContent.Updateable<BPMInstProcSteps>(new BPMInstProcSteps()
+                index = dbContent.Updateable<BPMInstProcSteps>(new BPMInstProcSteps()
                     {
                         TaskID = nodeConfig.TaskID,
                         NodeName = nodeConfig.NodeName,
@@ -55,10 +58,10 @@ namespace ExcelTest.Serivce
                         Comments = nodeConfig.Comment
                     })
                     .UpdateColumns(it => new
-                        { it.ExtRecipient, it.OwnerAccount, it.ReceiveAt, it.FinishAt, it.Comments })
+                        { it.OwnerAccount, it.ReceiveAt, it.FinishAt, it.Comments })
                     .Where(w => w.TaskID == nodeConfig.TaskID)
                     .Where(w => w.NodeName == nodeConfig.NodeName)
-                    .ExecuteCommandAsync();
+                    .ExecuteCommand();
 
                 dbContent.Ado.CommitTran();
 
@@ -68,6 +71,7 @@ namespace ExcelTest.Serivce
             {
                 dbContent.RollbackTran();
                 Console.WriteLine(e);
+                Console.ReadKey();
                 return index;
                 // throw;
             }

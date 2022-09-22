@@ -13,16 +13,18 @@ namespace ExcelTest.Serivce
 {
     public class ProcessPostService
     {
-        public static async Task BatchPostAsync()
+        public static void BatchPostAsync()
         {
             SysLogUtil sysLogUtil = new SysLogUtil(SysLogUtil.LogTagType.LogToFile);
 
             SqlSugarClient dbContent = SqlSugarConfig.GetConnectOption();
-            List<ProcessDataInfo> processDataInfos = await dbContent.Queryable<ProcessDataInfo>()
+            List<ProcessDataInfo> processDataInfos = dbContent.Queryable<ProcessDataInfo>()
                 .Where(f => f.TaskID == 0)
-                .ToListAsync();
+                .ToList();
 
             sysLogUtil.Trace($"本次一共需要发起{processDataInfos.Count}条流程");
+            Console.WriteLine($"本次一共需要发起{processDataInfos.Count}条流程");
+            Console.ReadKey();
 
             if (processDataInfos.Count < 1)
             {
@@ -31,9 +33,9 @@ namespace ExcelTest.Serivce
                 return;
             }
 
-            ProcessPost postData; 
-            
-            processDataInfos.ForEach(async e =>
+            ProcessPost postData;
+
+            processDataInfos.ForEach(e =>
             {
                 postData = new ProcessPost()
                 {
@@ -43,12 +45,12 @@ namespace ExcelTest.Serivce
                     ProcessName = e.ProcessName,
                     Comment = e.Comment
                 };
-               bool flag = await ProcessPostAsync(postData, e.ID);
-               Console.WriteLine(flag);
+                bool flag = ProcessPostAsync(postData, e.ID);
+                Console.WriteLine(flag);
             });
         }
 
-        private static async Task<bool> ProcessPostAsync(ProcessPost postData, string id = null)
+        private static bool ProcessPostAsync(ProcessPost postData, string id = null)
         {
             SysLogUtil logUtil = new SysLogUtil(SysLogUtil.LogTagType.LogToFile);
             RestApiUtil<ProcessPostResult> restApiUtil = new RestApiUtil<ProcessPostResult>();
@@ -62,7 +64,7 @@ namespace ExcelTest.Serivce
             requestParameter.Parameters.Add("UserAccount", postData.OwnerAccount);
             requestParameter.RequestBodyData = JsonConvert.SerializeObject(postData);
 
-            ProcessPostResult postResult = await restApiUtil.PostAsync(requestParameter);
+            ProcessPostResult postResult = restApiUtil.Post(requestParameter);
 
             if (!postResult.success)
             {
@@ -71,12 +73,12 @@ namespace ExcelTest.Serivce
                 return false;
             }
 
-           await UpdatePostInfoAsync(postResult,id);
+            UpdatePostInfoAsync(postResult, id);
 
-           return true;
+            return true;
         }
 
-        private static async Task UpdatePostInfoAsync(ProcessPostResult postResult, string id = null)
+        private static void UpdatePostInfoAsync(ProcessPostResult postResult, string id = null)
         {
             if (string.IsNullOrEmpty(id))
                 return;
@@ -88,20 +90,20 @@ namespace ExcelTest.Serivce
             {
                 dbContent.Ado.BeginTran();
 
-                await dbContent.Updateable<ProcessDataInfo>(new ProcessDataInfo()
-                    {
-                        TaskID = postResult.TaskID
-                    })
-                    .Where(f => f.ID == id)
-                    .UpdateColumns(it => it.TaskID)
-                    .ExecuteCommandAsync();
+                dbContent.Updateable<ProcessDataInfo>(new ProcessDataInfo()
+                {
+                    TaskID = postResult.TaskID
+                })
+                   .Where(f => f.ID == id)
+                   .UpdateColumns(it => it.TaskID)
+                   .ExecuteCommand();
 
-                await dbContent.Updateable<ProcessNodeConfig>(new ProcessNodeConfig()
-                    {
-                        TaskID = postResult.TaskID
-                    }).Where(f => f.AID == id)
+                dbContent.Updateable<ProcessNodeConfig>(new ProcessNodeConfig()
+                {
+                    TaskID = postResult.TaskID
+                }).Where(f => f.AID == id)
                     .UpdateColumns(it => it.TaskID)
-                    .ExecuteCommandAsync();
+                    .ExecuteCommand();
 
                 dbContent.Ado.CommitTran();
             }

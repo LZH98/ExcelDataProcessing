@@ -175,8 +175,9 @@ namespace ExcelTest.Utils
             try
             {
                 RestClient client = new RestClient(requestParameter.Url);
+                if(requestParameter.Url.ToLower().StartsWith("https://"))
                 // 跳过证书验证
-                client.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
+                    client.RemoteCertificateValidationCallback = (sender, certificate, chain, sslPolicyErrors) => true;
                 reval = await client.ExecuteAsync<T>(request);
                 stopWatch.Stop();
 

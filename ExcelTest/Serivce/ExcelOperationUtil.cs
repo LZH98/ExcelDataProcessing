@@ -15,7 +15,7 @@ namespace ExcelTest
 {
     public class ExcelOperationUtil
     {
-        public static async Task ReadExcelFile(string filePath, int sheetIndex, bool hasHeader, bool ischongf)
+        public static void ReadExcelFile(string filePath, int sheetIndex, bool hasHeader, bool ischongf)
         {
             if (!hasHeader)
                 return;
@@ -33,19 +33,19 @@ namespace ExcelTest
                     {
                         Console.WriteLine(
                             $"一共读取出{excelPackage.Workbook.Worksheets.Count}个Sheet，当前开始执行{item.Index + 1} 个Sheet");
-                        await ReadExcelData(item);
+                        ReadExcelData(item);
                         Console.WriteLine($"{item.Index + 1}个Sheet执行完毕");
                     }
                 }
                 else
                 {
                     ExcelWorksheet workSheet = excelPackage.Workbook.Worksheets[sheetIndex];
-                    await ReadExcelData(workSheet);
+                    ReadExcelData(workSheet);
                 }
             }
         }
 
-        private static async Task ReadExcelData(ExcelWorksheet workSheet)
+        private static void ReadExcelData(ExcelWorksheet workSheet)
         {
             Hashtable tableNameHashtable = new Hashtable();
             Hashtable dataFieldHashtable = new Hashtable();
@@ -69,6 +69,7 @@ namespace ExcelTest
 
             for (int i = 1; i < workSheet.Columns.EndColumn; i++)
             {
+                nodesDic = new Dictionary<string, ProcessNodeConfig>();
                 range = workSheet.Cells[1, i];
 
                 #region 字段显示名配置解析
@@ -289,8 +290,8 @@ namespace ExcelTest
             {
                 Console.WriteLine($"一共找到{processDataInfoList.Count}行数据，开始进行数据新增");
                 dbContent.Ado.BeginTran();
-                await dbContent.Insertable(processDataInfoList).ExecuteCommandAsync();
-                await dbContent.Insertable(processNodeConfigList).ExecuteCommandAsync();
+                dbContent.Insertable(processDataInfoList).ExecuteCommand();
+                dbContent.Insertable(processNodeConfigList).ExecuteCommand();
                 dbContent.Ado.CommitTran();
                 Console.WriteLine("表插入成功");
             }

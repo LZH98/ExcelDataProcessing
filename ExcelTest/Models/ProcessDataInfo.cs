@@ -8,7 +8,7 @@
     {
         public string ID { get; set; }
         public string ProcessName { get; set; }
-        public string Action { get; set; } = "发起";
+        public string Action { get; set; } = "提交";
         public string Comment { get; set; }
         public string FormData { get; set; }
         public string OwnerAccount { get; set; }

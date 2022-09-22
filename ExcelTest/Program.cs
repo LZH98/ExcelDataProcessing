@@ -8,7 +8,7 @@ namespace ExcelTest
 {
     internal class Program
     {
-        private static async Task Main(string[] args)
+        private static void Main(string[] args)
         {
             Console.WriteLine("程序开始执行");
             Console.WriteLine("===================请选择执行模式====================");
@@ -19,13 +19,15 @@ namespace ExcelTest
             switch (key)
             {
                 case 0:
-                   await ExcelDataReader();
+                    ExcelDataReader();
                     break;
                 case 1:
-                    await ProcessPostService.BatchPostAsync();
+                    ProcessPostService.BatchPostAsync();
+                    Console.WriteLine("请确认程序执行成功");
+                    Console.ReadKey();
                     break;
                 case 2:
-                    await UpdateProcStepService.UpdatSetpInfo();
+                    UpdateProcStepService.UpdatSetpInfo();
                     break;
 
                 default:
@@ -36,10 +38,10 @@ namespace ExcelTest
             Console.WriteLine("===========程序执行完毕=============");
         }
 
-        private static async Task ExcelDataReader()
+        private static void ExcelDataReader()
         {
             string filePath = SystemConfig.GetSettingset("AppSetting:ExcelPath");
-            await ExcelOperationUtil.ReadExcelFile(filePath, 0, true, true);
+             ExcelOperationUtil.ReadExcelFile(filePath, 0, true, true);
             //Console.WriteLine("开始执行第一个Sheet数据处理");
             //ExcelOperationUtil.ReadExcelFile(filePath,0,true);
             //Console.WriteLine("第一个Sheet执行完毕");
@@ -51,6 +53,8 @@ namespace ExcelTest
             //Console.WriteLine("第三个Sheet执行完毕");
 
             Console.WriteLine("==========所有Excel数据清理初始化完毕===========");
+            Console.WriteLine("请确认程序执行成功");
+            Console.ReadKey();
         }
     }
 }
