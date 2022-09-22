@@ -2,7 +2,7 @@
 
 namespace ExcelTest.Env
 {
-    public class SqlSugerConfig
+    public class SqlSugarConfig
     {
         private static string dbConnectionStr = SystemConfig.GetSettingset("ConnectionStrings:ProcDB");
 

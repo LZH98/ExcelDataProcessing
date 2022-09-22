@@ -9,12 +9,13 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace ExcelTest
 {
     public class ExcelOperationUtil
     {
-        public static void ReadExcelFile(string filePath, int sheetIndex, bool hasHeader, bool ischongf)
+        public static async Task ReadExcelFile(string filePath, int sheetIndex, bool hasHeader, bool ischongf)
         {
             if (!hasHeader)
                 return;
@@ -30,18 +31,21 @@ namespace ExcelTest
                 {
                     foreach (ExcelWorksheet item in excelPackage.Workbook.Worksheets)
                     {
-                        ReadExcelData(item);
+                        Console.WriteLine(
+                            $"一共读取出{excelPackage.Workbook.Worksheets.Count}个Sheet，当前开始执行{item.Index + 1} 个Sheet");
+                        await ReadExcelData(item);
+                        Console.WriteLine($"{item.Index + 1}个Sheet执行完毕");
                     }
                 }
                 else
                 {
                     ExcelWorksheet workSheet = excelPackage.Workbook.Worksheets[sheetIndex];
-                    ReadExcelData(workSheet);
+                    await ReadExcelData(workSheet);
                 }
             }
         }
 
-        private static async void ReadExcelData(ExcelWorksheet workSheet)
+        private static async Task ReadExcelData(ExcelWorksheet workSheet)
         {
             Hashtable tableNameHashtable = new Hashtable();
             Hashtable dataFieldHashtable = new Hashtable();
@@ -110,7 +114,8 @@ namespace ExcelTest
                             f.Start.Column == i && f.Text.Trim().ToLower() == "process");
                     var processConfigLast =
                         workSheet.Cells.FirstOrDefault(f =>
-                            f.Start.Column == i && f.Text.Trim().ToLower() == "process" && f.Start.Row != processConfigFirst.Start.Row);
+                            f.Start.Column == i && f.Text.Trim().ToLower() == "process" &&
+                            f.Start.Row != processConfigFirst.Start.Row);
 
                     if (processConfigFirst != null && processConfigLast != null)
                     {
@@ -125,7 +130,8 @@ namespace ExcelTest
                             f.Start.Column == i && f.Text.Trim().ToLower() == "node");
                     var nodeConfigLast =
                         workSheet.Cells.FirstOrDefault(f =>
-                            f.Start.Column == i && f.Text.Trim().ToLower() == "node" && f.Start.Row != nodeConfigFirst.Start.Row);
+                            f.Start.Column == i && f.Text.Trim().ToLower() == "node" &&
+                            f.Start.Row != nodeConfigFirst.Start.Row);
                     if (nodeConfigFirst != null && nodeConfigLast != null)
                     {
                         nodeConfigRange.Item1 = nodeConfigFirst.Start.Row;
@@ -216,9 +222,11 @@ namespace ExcelTest
                                 nodesDic[nodeName] = new ProcessNodeConfig()
                                 {
                                     ProcessName = workSheet.Name,
+                                    NodeName = nodeName
                                 };
                             }
-                            switch ((j - nodeConfigRange.Item1) % 3)
+
+                            switch ((j - nodeConfigRange.Item1) % 4)
                             {
                                 case 1:
                                     nodesDic[nodeName].OwnerAccount = valueRange?.Text;
@@ -229,11 +237,16 @@ namespace ExcelTest
                                     nodesDic[nodeName].Comment = valueRange?.Text;
                                     Console.WriteLine($"节点：{nodeInfoHashtable[j.ToString()]} 审批意见：{valueRange.Text}");
                                     break;
-
+                                case 3:
+                                    nodesDic[nodeName].CreateAt = Convert.ToDateTime(valueRange?.Text);
+                                    Console.WriteLine(
+                                        $"节点：{nodeInfoHashtable[j.ToString()]} 审批时间:{DateTime.Parse(valueRange.Text).ToString("yyyy-MM-dd HH:mm:ss")}");
+                                    break;
                                 case 0:
-                                    nodesDic[nodeName].CreateAt = Convert.ToDateTime(valueRange?.Text).AddHours(-1);
+                                    
                                     nodesDic[nodeName].ApprovalAt = Convert.ToDateTime(valueRange?.Text);
-                                    Console.WriteLine($"节点：{nodeInfoHashtable[j.ToString()]} 审批时间:{DateTime.Parse(valueRange.Text).ToString("yyyy-MM-dd HH:mm:ss")}");
+                                    Console.WriteLine(
+                                        $"节点：{nodeInfoHashtable[j.ToString()]} 审批时间:{DateTime.Parse(valueRange.Text).ToString("yyyy-MM-dd HH:mm:ss")}");
                                     break;
                             }
                         }
@@ -271,25 +284,27 @@ namespace ExcelTest
                 #endregion 输入内容解析
             }
 
-            SqlSugarClient dbContent = SqlSugerConfig.GetConnectOption();
+            SqlSugarClient dbContent = SqlSugarConfig.GetConnectOption();
             try
             {
+                Console.WriteLine($"一共找到{processDataInfoList.Count}行数据，开始进行数据新增");
                 dbContent.Ado.BeginTran();
                 await dbContent.Insertable(processDataInfoList).ExecuteCommandAsync();
                 await dbContent.Insertable(processNodeConfigList).ExecuteCommandAsync();
                 dbContent.Ado.CommitTran();
+                Console.WriteLine("表插入成功");
             }
             catch (Exception ex)
             {
                 dbContent.RollbackTran();
             }
 
-            Console.WriteLine(tableNameHashtable.Count);
-            Console.WriteLine(tableNameHashtable["2"]);
-            Console.WriteLine(dataFieldHashtable.Count);
-            Console.WriteLine(dataFieldHashtable["2"]);
-            Console.WriteLine(JsonConvert.SerializeObject(processDataInfoList));
-            Console.WriteLine(JsonConvert.SerializeObject(processNodeConfigList));
+            //Console.WriteLine(tableNameHashtable.Count);
+            //Console.WriteLine(tableNameHashtable["2"]);
+            //Console.WriteLine(dataFieldHashtable.Count);
+            //Console.WriteLine(dataFieldHashtable["2"]);
+            //Console.WriteLine(JsonConvert.SerializeObject(processDataInfoList));
+            //Console.WriteLine(JsonConvert.SerializeObject(processNodeConfigList));
         }
     }
 }

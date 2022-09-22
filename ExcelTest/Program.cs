@@ -1,6 +1,8 @@
 ﻿using ExcelTest.Serivce;
 using System;
+using System.Drawing;
 using System.Threading.Tasks;
+using ExcelTest.Env;
 
 namespace ExcelTest
 {
@@ -17,13 +19,13 @@ namespace ExcelTest
             switch (key)
             {
                 case 0:
-                    ExcelDataReader();
+                   await ExcelDataReader();
                     break;
                 case 1:
-                    await ProcessPostService.BatchPost();
+                    await ProcessPostService.BatchPostAsync();
                     break;
-
                 case 2:
+                    await UpdateProcStepService.UpdatSetpInfo();
                     break;
 
                 default:
@@ -34,10 +36,10 @@ namespace ExcelTest
             Console.WriteLine("===========程序执行完毕=============");
         }
 
-        private static void ExcelDataReader()
+        private static async Task ExcelDataReader()
         {
-            string filePath = @"./Input/InputData.xlsx";
-            ExcelOperationUtil.ReadExcelFile(filePath, 0, true, true);
+            string filePath = SystemConfig.GetSettingset("AppSetting:ExcelPath");
+            await ExcelOperationUtil.ReadExcelFile(filePath, 0, true, true);
             //Console.WriteLine("开始执行第一个Sheet数据处理");
             //ExcelOperationUtil.ReadExcelFile(filePath,0,true);
             //Console.WriteLine("第一个Sheet执行完毕");
